@@ -81,7 +81,7 @@ if "faireval" in args_data_path:
         })
 
         os.makedirs(args_output_dir, exist_ok=True)
-        with open(os.path.join(args_output_dir, "pair_comparison_results_conv.json"), "w") as f:
+        with open(os.path.join(args_output_dir, "pair_comparison_results_conv_beta.json"), "w") as f:
             json.dump(pair_comparison_output, f, indent=4)
     # with open(os.path.join(args_output_dir, "gt_origin_results.json"), "w") as f:
     #     json.dump(gt_origin_output, f, indent=4)

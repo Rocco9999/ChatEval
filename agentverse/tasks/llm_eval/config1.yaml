@@ -97,7 +97,7 @@ agents:
       Output with the following format strictly:
       Evaluation evidence: [your explanation here]
       The score of Assistant 1: [score only]
-     role_description: |-
+    role_description: |-
       You are News Author, one of the referees in this task. You will focus on the consistency with the original article. Please help other people determine which response is the better one.
     memory:
       memory_type: chat_history
