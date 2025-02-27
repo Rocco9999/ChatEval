@@ -83,7 +83,7 @@ class ConversationAgent(BaseAgent):
             "agent_name": self.name,
             "env_description": env_description,
             "role_description": self.role_description,
-            # "chat_history": self.memory.to_string(add_sender_prefix=True),
+            "chat_history": self.memory.to_string(add_sender_prefix=True),
         }
         return Template(self.prompt_template).safe_substitute(input_arguments)
 

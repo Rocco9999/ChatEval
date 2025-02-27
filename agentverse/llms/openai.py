@@ -2,28 +2,54 @@ import logging
 import numpy as np
 import time
 import os
+import random
 from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
+import requests
 
 from agentverse.llms.base import LLMResult
 
 from . import llm_registry
 from .base import BaseChatModel, BaseCompletionModel, BaseModelArgs
 from agentverse.message import Message
-
+logging.getLogger("httpx").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
+
+# Lista dei token (SOSTITUISCI CON I TUOI TOKEN REALI)
+tokens = [
+    "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",
+    "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",
+    "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",
+    "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",
+    "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",
+    "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",
+    "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",
+    "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"
+]
+
+current_token_index = 0  # Indice del token corrente (globale)
+
+
+def set_next_token():
+    """Imposta il prossimo token come chiave API."""
+    global current_token_index  # Usa la variabile globale
+    current_token_index = (current_token_index + 1) % len(tokens)
+    openai.api_key = tokens[current_token_index]
+    logger.info(f"Switched to token: {openai.api_key}")
 
 try:
     import openai
     from openai import OpenAI, AsyncOpenAI
     
-    openai.api_key = os.environ.get("OPENAI_API_KEY")
+    
+    openai.api_key = tokens[current_token_index]
+    print(openai.api_key)
     
     #print(openai.api_key)
-    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"),)
+    client = OpenAI(api_key=openai.api_key)  # Crea il client SENZA specificare la chiave
     #print(client.models.list())
-    aclient = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"),)
+    aclient = AsyncOpenAI(api_key=openai.api_key)  # Crea il client asincrono SENZA
     from openai import OpenAIError
 except ImportError:
     is_openai_available = False
@@ -70,24 +96,36 @@ class OpenAICompletion(BaseCompletionModel):
         super().__init__(args=args, max_retry=max_retry)
 
     def generate_response(self, prompt: str, chat_memory: List[Message], final_prompt: str) -> LLMResult:
-        response = client.completions.create(model="gpt-4o-mini", prompt=prompt, stream=False)
-        return LLMResult(
-            content=response.choices[0].text,
-            send_tokens=response.usage.prompt_tokens,
-            recv_tokens=response.usage.completion_tokens,
-            total_tokens=response.usage.total_tokens,
-        )
+        try:
+            response = client.completions.create(prompt=prompt, **self.args.dict())
+            return LLMResult(
+                content=response.choices[0].text,
+                send_tokens=response.usage.prompt_tokens,
+                recv_tokens=response.usage.completion_tokens,
+                total_tokens=response.usage.total_tokens,
+            )
+        except requests.exceptions.HTTPError as e:  # Cattura l'eccezione HTTP
+            if e.response.status_code == 429:
+                logger.error(f"Rate limit exceeded. Switching token...")
+                set_next_token()  # Cambia token
+            raise  # Rilancia l'eccezione per farla gestire dallo script principale
 
     async def agenerate_response(self, prompt: str, chat_memory: List[Message], final_prompt: str) -> LLMResult:
-        response = await aclient.completions.create(model="gpt-4o-mini", prompt=prompt, stream=False)
-        return LLMResult(
-            content=response.choices[0].text,
-            send_tokens=response.usage.prompt_tokens,
-            recv_tokens=response.usage.completion_tokens,
-            total_tokens=response.usage.total_tokens,
-        )
+        try:
+            response = await aclient.completions.create(prompt=prompt, **self.args.dict())
+            return LLMResult(
+                content=response.choices[0].text,
+                send_tokens=response.usage.prompt_tokens,
+                recv_tokens=response.usage.completion_tokens,
+                total_tokens=response.usage.total_tokens,
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:
+                logger.error(f"Rate limit exceeded. Switching token...")
+                set_next_token()
+            raise
 
-@llm_registry.register("gpt-3.5-turbo-0301")
+@llm_registry.register("llama-3.3-70b-versatile")
 @llm_registry.register("gpt-3.5-turbo")
 @llm_registry.register("gpt-4")
 class OpenAIChat(BaseChatModel):
@@ -116,51 +154,55 @@ class OpenAIChat(BaseChatModel):
     def generate_response(self, prompt: str, chat_memory: List[Message], final_prompt: str) -> LLMResult:
         messages = self._construct_messages(prompt, chat_memory, final_prompt)
         try:
-            if openai.api_type == "azure":
-                response = client.chat.completions.create(engine="gpt-4-6", messages=messages, **self.args.dict())
-            else:
-
-
-
-                response = client.chat.completions.create(messages=messages, model="gpt-4o-mini",stream=False)
-        except (OpenAIError, KeyboardInterrupt) as error:
+            response = client.chat.completions.create(messages=messages, **self.args.dict())
+            return LLMResult(
+                content=response.choices[0].message.content,
+                send_tokens=response.usage.prompt_tokens,
+                recv_tokens=response.usage.completion_tokens,
+                total_tokens=response.usage.total_tokens,
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:
+                logger.error(f"Rate limit exceeded. Switching token...")
+                set_next_token()
             raise
-        return LLMResult(
-            content=response.choices[0].message.content,
-            send_tokens=response.usage.prompt_tokens,
-            recv_tokens=response.usage.completion_tokens,
-            total_tokens=response.usage.total_tokens,
-        )
 
     async def agenerate_response(self, prompt: str, chat_memory: List[Message], final_prompt: str) -> LLMResult:
         messages = self._construct_messages(prompt, chat_memory, final_prompt)
         try:
-            if openai.api_type == "azure":
-                response = await aclient.chat.completions.create(engine="gpt-4-6", messages=messages, **self.args.dict())
-            else:
-
-                response = await aclient.chat.completions.create(messages=messages, model="gpt-4o-mini", stream=False)
-        except (OpenAIError, KeyboardInterrupt) as error:
+            response = await aclient.chat.completions.create(messages=messages, **self.args.dict())
+            return LLMResult(
+                content=response.choices[0].message.content,
+                send_tokens=response.usage.prompt_tokens,
+                recv_tokens=response.usage.completion_tokens,
+                total_tokens=response.usage.total_tokens,
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:
+                logger.error(f"Rate limit exceeded. Switching token...")
+                set_next_token()
             raise
-        return LLMResult(
-            content=response.choices[0].message.content,
-            send_tokens=response.usage.prompt_tokens,
-            recv_tokens=response.usage.completion_tokens,
-            total_tokens=response.usage.total_tokens,
-        )
 
 
 def get_embedding(text: str, attempts=3) -> np.array:
-    attempt = 0
-    while attempt < attempts:
+    while attempts > 0:
         try:
             text = text.replace("\n", " ")
-            embedding = client.embeddings.create(input=[text], model="gpt-4o-mini")["data"][0]["embedding"]
+            embedding = client.embeddings.create(input=[text], model="llama-3.3-70b-versatile")["data"][0]["embedding"]
             return tuple(embedding)
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:
+                logger.error(f"Rate limit exceeded. Switching token...")
+                set_next_token()  # Cambia token
+            else:
+                logger.error(f"HTTP Error: {e}", exc_info=True)
+                raise
         except Exception as e:
-            attempt += 1
-            logger.error(f"Error {e} when requesting openai models. Retrying")
-            time.sleep(10)
-    logger.warning(
-        f"get_embedding() failed after {attempts} attempts. returning empty response"
-    )
+            logger.error(f"Error {e} when requesting openai models.")
+            attempts -= 1
+            if attempts > 0:
+                logger.error("Retrying...")
+                time.sleep(10)  # Aspetta prima di riprovare
+
+    logger.error(f"get_embedding() failed after multiple attempts.")
+    raise Exception("Failed to get embedding after multiple attempts")

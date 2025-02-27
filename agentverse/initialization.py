@@ -64,7 +64,7 @@ def load_agent(agent_config: Dict) -> langchainAgent:
 def prepare_task_config(taskwithyaml):
     """Read the yaml config of the given task in `tasks` directory."""
 
-    if not str(taskwithyaml).endswith("config.yaml"):
+    if not str(taskwithyaml).endswith("config1.yaml"):
         raise ValueError(
             "You should include config.yaml in your task config path"
         )
@@ -85,7 +85,7 @@ def prepare_task_config(taskwithyaml):
         agent_configs["memory_manipulator"] = memory_manipulator
         if agent_configs.get("tool_memory", None) is not None:
             agent_configs["tool_memory"] = load_memory(agent_configs["tool_memory"])
-        llm = load_llm(agent_configs.get("llm", "text-davinci-003"))
+        llm = load_llm(agent_configs.get("llm", "llama-3.3-70b-versatile"))
         agent_configs["llm"] = llm
 
         agent_configs["tools"] = load_tools(agent_configs.get("tools", []))

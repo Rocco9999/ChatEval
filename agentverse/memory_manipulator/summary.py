@@ -17,27 +17,35 @@ from agentverse.memory.base import BaseMemory
 from agentverse.llms.base import BaseLLM
 
 from . import memory_manipulator_registry
+from typing import Optional, Any
 
 
 if TYPE_CHECKING:
     from agentverse.agents.base import BaseAgent
 
-
 @memory_manipulator_registry.register("summary")
 class SummaryMemoryManipulator(BaseMemoryManipulator):
 
-    memory: BaseMemory = None
-    agent: BaseAgent = None
-    llm: BaseLLM
+    memory: "BaseMemory" = None
+
+    agent: Any = None  # Evita la valutazione anticipata del tipo
+
+
+    llm: "BaseLLM"
+
     summary_template: str = None
 
     buffer: str = ""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         from agentverse.initialization import load_llm
+
         llm_config = kwargs.pop("llm")
         llm = load_llm(llm_config)
-        super().__init__(llm=llm, *args, **kwargs)
+        agent = kwargs.pop("agent", None)
+
+        super().__init__(llm=llm, agent=agent, **kwargs)  # 🔹 Inizializza Pydantic v2 correttamente
+
 
     def manipulate_memory(self):
 
@@ -107,3 +115,11 @@ class SummaryMemoryManipulator(BaseMemoryManipulator):
 
     def reset(self) -> None:
         self.buffer = ""
+
+import sys
+BaseAgent = sys.modules.get("agentverse.agents.base")  # Carica BaseAgent solo se disponibile
+
+
+# ✅ Aggiorna i riferimenti dopo il caricamento
+if BaseAgent:
+    SummaryMemoryManipulator.update_forward_refs()

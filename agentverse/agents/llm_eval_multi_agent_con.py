@@ -140,7 +140,7 @@ class LLMEvalAgent(BaseAgent):
             "compared_text_one": self.compared_text_one,
             "compared_text_two": self.compared_text_two,
             "final_prompt": self.final_prompt,
-            # "chat_history": self.memory.to_string(add_sender_prefix=True),
+            "chat_history": self.memory.to_string(add_sender_prefix=True),
         }
         return Template(self.prompt_template).safe_substitute(input_arguments)
 
