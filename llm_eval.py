@@ -17,13 +17,13 @@ from argparse import ArgumentParser
 
 parser = ArgumentParser()
 
-parser.add_argument("--config", type=str, default="config1.yaml")
+parser.add_argument("--config", type=str, default="config.yaml")  #cambiare il config in base a quello che si vuole utilizzare
 parser.add_argument("--reverse_input", default=False, action="store_true")
 
 
 args = parser.parse_args()
 
-agentverse, args_data_path, args_output_dir = AgentVerse.from_task("agentverse/tasks/llm_eval/config1.yaml")
+agentverse, args_data_path, args_output_dir = AgentVerse.from_task("agentverse/tasks/llm_eval/config.yaml") #cambiare il config in base a quello che si vuole utilizzare
 
 print(args)
 
@@ -51,7 +51,7 @@ if "faireval" in args_data_path:
             print(f"Processing conversation {conversation_id}, exchange {num}: {ins['question']}")
 
 
-            print(f"================================instance {conversation_id} {num}====================================")
+            print(f"================================ conversazione {conversation_id}, istanza {num}====================================")
 
             # reassign the text to agents, and set final_prompt to null for debate at first round
             for agent_id in range(len(agentverse.agents)):

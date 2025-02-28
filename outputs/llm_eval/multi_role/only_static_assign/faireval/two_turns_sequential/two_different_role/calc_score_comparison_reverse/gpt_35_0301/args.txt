@@ -1,1 +1,1 @@
-Namespace(config='config1.yaml', reverse_input=False)
+Namespace(config='config.yaml', reverse_input=False)
