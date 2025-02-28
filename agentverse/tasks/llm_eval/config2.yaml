@@ -58,14 +58,14 @@ agents:
       memory_type: summary
       recursive: True
       llm:
-        model: "llama-3.3-70b-versatile"
-        llm_type: llama-3.3-70b-versatile
+        model: "llama3-70b-8192"
+        llm_type: llama3-70b-8192
         temperature: 0
         max_tokens: 512
     prompt_template: *prompt
     llm:
-      model: "llama-3.3-70b-versatile"
-      llm_type: llama-3.3-70b-versatile
+      model: "llama3-70b-8192"
+      llm_type: llama3-70b-8192
       temperature: 0
       max_tokens: 512
   -
@@ -86,14 +86,14 @@ agents:
       memory_type: summary
       recursive: True
       llm:
-        model: "llama-3.3-70b-versatile"
-        llm_type: llama-3.3-70b-versatile
+        model: "llama3-70b-8192"
+        llm_type: llama3-70b-8192
         temperature: 0
         max_tokens: 512
     prompt_template: *prompt
     llm:
-      model: "llama-3.3-70b-versatile"
-      llm_type: llama-3.3-70b-versatile
+      model: "llama3-70b-8192"
+      llm_type: llama3-70b-8192
       temperature: 0
       max_tokens: 512
 

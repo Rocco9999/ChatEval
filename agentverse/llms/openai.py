@@ -125,7 +125,7 @@ class OpenAICompletion(BaseCompletionModel):
                 set_next_token()
             raise
 
-@llm_registry.register("llama-3.3-70b-versatile")
+@llm_registry.register("llama3-70b-8192")
 @llm_registry.register("gpt-3.5-turbo")
 @llm_registry.register("gpt-4")
 class OpenAIChat(BaseChatModel):
@@ -188,7 +188,7 @@ def get_embedding(text: str, attempts=3) -> np.array:
     while attempts > 0:
         try:
             text = text.replace("\n", " ")
-            embedding = client.embeddings.create(input=[text], model="llama-3.3-70b-versatile")["data"][0]["embedding"]
+            embedding = client.embeddings.create(input=[text], model="llama3-70b-8192")["data"][0]["embedding"]
             return tuple(embedding)
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 429:
