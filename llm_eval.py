@@ -92,7 +92,7 @@ elif "adversarial" in args_data_path:
 
     for num, ins in enumerate(data):
 
-        print(f"================================instance {num}====================================")
+        print(f"================================instanza {num}====================================")
 
         # reassign the text to agents, and set final_prompt to null for debate at first round
         for agent_id in range(len(agentverse.agents)):
