@@ -41,10 +41,10 @@ with open(args_data_path) as f:
     data = json.load(f)
 
 if "faireval" in args_data_path:
-    pair_comparison_output = []
 
-    for conv in data[:1]:
+    for conv in data[9:]:
         conversation_id = conv["conversation_id"]
+        pair_comparison_output = []
         conversation_results = []
         
         for num, ins in enumerate(conv["exchanges"]):
@@ -81,7 +81,7 @@ if "faireval" in args_data_path:
         })
 
         os.makedirs(args_output_dir, exist_ok=True)
-        with open(os.path.join(args_output_dir, "pair_comparison_results_conv_beta.json"), "w") as f:
+        with open(os.path.join(args_output_dir, "conversation_result.json"), "a") as f:
             json.dump(pair_comparison_output, f, indent=4)
     # with open(os.path.join(args_output_dir, "gt_origin_results.json"), "w") as f:
     #     json.dump(gt_origin_output, f, indent=4)

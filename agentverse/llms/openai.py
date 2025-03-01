@@ -25,7 +25,10 @@ tokens = [
     "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",
     "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",
     "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",
-    "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"
+    "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",
+    "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",
+    "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",
+    "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"
 ]
 
 current_token_index = 0  # Indice del token corrente (globale)

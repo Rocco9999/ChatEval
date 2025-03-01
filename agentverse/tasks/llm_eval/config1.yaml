@@ -59,8 +59,8 @@ agents:
       memory_manipulator_type: basic
     prompt_template: *prompt
     llm:
-      model: "llama3-70b-8192"
-      llm_type: llama3-70b-8192
+      model: "deepseek-r1-distill-llama-70b"
+      llm_type: deepseek-r1-distill-llama-70b
       temperature: 0
       max_tokens: 512
   -
@@ -82,8 +82,8 @@ agents:
       memory_manipulator_type: basic
     prompt_template: *prompt
     llm:
-      model: "llama3-70b-8192"
-      llm_type: llama3-70b-8192
+      model: "deepseek-r1-distill-llama-70b"
+      llm_type: deepseek-r1-distill-llama-70b
       temperature: 0
       max_tokens: 512
   -
@@ -105,8 +105,8 @@ agents:
       memory_manipulator_type: basic
     prompt_template: *prompt
     llm:
-      model: "llama3-70b-8192"
-      llm_type: llama3-70b-8192
+      model: "deepseek-r1-distill-llama-70b"
+      llm_type: deepseek-r1-distill-llama-70b
       temperature: 0
       max_tokens: 512
   -
@@ -128,8 +128,8 @@ agents:
       memory_manipulator_type: basic
     prompt_template: *prompt
     llm:
-      model: "llama3-70b-8192"
-      llm_type: llama3-70b-8192
+      model: "deepseek-r1-distill-llama-70b"
+      llm_type: deepseek-r1-distill-llama-70b
       temperature: 0
       max_tokens: 512
   -
@@ -151,8 +151,8 @@ agents:
       memory_manipulator_type: basic
     prompt_template: *prompt
     llm:
-      model: "llama3-70b-8192"
-      llm_type: llama3-70b-8192
+      model: "deepseek-r1-distill-llama-70b"
+      llm_type: deepseek-r1-distill-llama-70b
       temperature: 0
       max_tokens: 512
 
