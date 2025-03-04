@@ -296,7 +296,7 @@ if __name__ == '__main__':
                             example_nums=len(human_results),
                             )
 
-    # kappa = get_kappa(meta)
+    kappa = get_kappa(meta)
 
     print(f"accuracy: {accuracy}")
-    # print(f"kappa: {kappa}")
+    print(f"kappa: {kappa}")
