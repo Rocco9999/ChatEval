@@ -29,6 +29,8 @@ class BaseEnvironment(BaseModel):
     agents: List[BaseAgent]
     rule: Rule
     max_turns: int = 10
+    discussion_turns: int = 4
+    evaluation_turns: int = 1
     cnt_turn: int = 0
     last_messages: List[Message] = []
     rule_params: Dict = {}

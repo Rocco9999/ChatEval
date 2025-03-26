@@ -6,7 +6,7 @@ os.environ["OPENAI_BASE_URL"] = "https://api.groq.com/openai/v1"
 # os.environ["http_proxy"] = "http://127.0.0.1:7890"
 # os.environ["https_proxy"] = "http://127.0.0.1:7890"
 # os.environ["all_proxy"] = "socks5://127.0.0.1:7890"
-
+import asyncio
 
 import json
 import random
@@ -15,108 +15,122 @@ from eval_helper.get_evaluation import get_evaluation
 from agentverse.agentverse import AgentVerse
 from argparse import ArgumentParser
 
+if os.name == 'nt':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 parser = ArgumentParser()
 
-parser.add_argument("--config", type=str, default="config.yaml")  #cambiare il config in base a quello che si vuole utilizzare
+parser.add_argument("--config", type=str, default="config1.yaml")  #cambiare il config in base a quello che si vuole utilizzare
 parser.add_argument("--reverse_input", default=False, action="store_true")
 
 
 args = parser.parse_args()
 
-agentverse, args_data_path, args_output_dir = AgentVerse.from_task("agentverse/tasks/llm_eval/config.yaml") #cambiare il config in base a quello che si vuole utilizzare
+async def main():
 
-print(args)
+    agentverse, args_data_path, args_output_dir = AgentVerse.from_task("agentverse/tasks/llm_eval/config1.yaml") #cambiare il config in base a quello che si vuole utilizzare
 
-os.makedirs(args_output_dir, exist_ok=True)
-with open(os.path.join(args_output_dir, "args.txt"), "w") as f:
-    f.writelines(str(args))
+    print(args)
 
-# uncomment this line if you don't want to overwrite your output_dir
-# if os.path.exists(args_output_dir) and len(os.listdir(args_output_dir)) > 1 :
-#
-#     raise ValueError("the output_dir is not empty, check if is expected.")
+    os.makedirs(args_output_dir, exist_ok=True)
+    with open(os.path.join(args_output_dir, "args.txt"), "w") as f:
+        f.writelines(str(args))
+
+    # uncomment this line if you don't want to overwrite your output_dir
+    # if os.path.exists(args_output_dir) and len(os.listdir(args_output_dir)) > 1 :
+    #
+    #     raise ValueError("the output_dir is not empty, check if is expected.")
 
 
-with open(args_data_path) as f:
-    data = json.load(f)
+    with open(args_data_path, encoding="utf-8") as f:
+        data = json.load(f)
 
-if "faireval" in args_data_path:
+    if "faireval" in args_data_path:
 
-    for conv in data[9:]:
-        conversation_id = conv["conversation_id"]
+        for conv in data[47:550]:
+            conversation_id = conv["conversation_id"]
+            pair_comparison_output = []
+            conversation_results = []
+            
+            for num, ins in enumerate(conv["exchanges"]):
+                print(f"Processing conversation {conversation_id}, exchange {num}: {ins['question']}")
+
+
+                print(f"================================ conversazione {conversation_id}, istanza {num}====================================")
+
+                # reassign the text to agents, and set final_prompt to null for debate at first round
+                for agent_id in range(len(agentverse.agents)):
+                    agentverse.agents[agent_id].source_text = ins["question"]
+
+                    if args.reverse_input:
+                        agentverse.agents[agent_id].compared_text_two = ins["response"]["gpt4"]
+                    else:
+                        agentverse.agents[agent_id].compared_text_one = ins["response"]["gpt4"]
+
+                    agentverse.agents[agent_id].final_prompt = ""
+
+                await agentverse.run()
+
+                evaluation = get_evaluation(setting="every_agent", messages=agentverse.agents[0].memory.messages, agent_nums=len(agentverse.agents))
+
+                conversation_results.append({
+                    "exchange_id": num,
+                    "question": ins["question"],
+                    "response": {"gpt4": ins["response"]["gpt4"]},
+                    "evaluation": evaluation
+                })
+
+            pair_comparison_output.append({
+                "conversation_id": conversation_id,
+                "results": conversation_results
+            })
+
+            os.makedirs(args_output_dir, exist_ok=True)
+            with open(os.path.join(args_output_dir, "conversation_result.json"), "a") as f:
+                json.dump(pair_comparison_output, f, indent=4)
+        # with open(os.path.join(args_output_dir, "gt_origin_results.json"), "w") as f:
+        #     json.dump(gt_origin_output, f, indent=4)
+
+    elif "adversarial" in args_data_path:
+
         pair_comparison_output = []
-        conversation_results = []
-        
-        for num, ins in enumerate(conv["exchanges"]):
-            print(f"Processing conversation {conversation_id}, exchange {num}: {ins['question']}")
 
+        for num, ins in enumerate(data):
 
-            print(f"================================ conversazione {conversation_id}, istanza {num}====================================")
+            print(f"================================instanza {num}====================================")
 
             # reassign the text to agents, and set final_prompt to null for debate at first round
             for agent_id in range(len(agentverse.agents)):
                 agentverse.agents[agent_id].source_text = ins["question"]
 
                 if args.reverse_input:
-                    agentverse.agents[agent_id].compared_text_two = ins["response"]["gpt4"]
+                    agentverse.agents[agent_id].compared_text_one = ins["response"]["output_2"]
+                    agentverse.agents[agent_id].compared_text_two = ins["response"]["output_1"]
                 else:
-                    agentverse.agents[agent_id].compared_text_one = ins["response"]["gpt4"]
+                    agentverse.agents[agent_id].compared_text_one = ins["response"]["output_1"]
+                    agentverse.agents[agent_id].compared_text_two = ins["response"]["output_2"]
 
                 agentverse.agents[agent_id].final_prompt = ""
 
-            agentverse.run()
+            await agentverse.run()
 
-            evaluation = get_evaluation(setting="every_agent", messages=agentverse.agents[0].memory.messages, agent_nums=len(agentverse.agents))
+            evaluation = get_evaluation(setting="every_agent", messages=agentverse.agents[0].memory.messages,
+                                        agent_nums=len(agentverse.agents))
 
-            conversation_results.append({
-                "exchange_id": num,
-                "question": ins["question"],
-                "response": {"gpt4": ins["response"]["gpt4"]},
-                "evaluation": evaluation
-            })
+            pair_comparison_output.append({"question": ins["question"],
+                                        "response": {"output_1": ins["response"]["output_1"],
+                                                        "output_2": ins["response"]["output_2"]},
+                                        "evaluation": evaluation})
 
-        pair_comparison_output.append({
-            "conversation_id": conversation_id,
-            "results": conversation_results
-        })
+            os.makedirs(args_output_dir, exist_ok=True)
+            with open(os.path.join(args_output_dir, "pair_comparison_results.json"), "w") as f:
+                json.dump(pair_comparison_output, f, indent=4)
 
-        os.makedirs(args_output_dir, exist_ok=True)
-        with open(os.path.join(args_output_dir, "conversation_result.json"), "a") as f:
-            json.dump(pair_comparison_output, f, indent=4)
-    # with open(os.path.join(args_output_dir, "gt_origin_results.json"), "w") as f:
-    #     json.dump(gt_origin_output, f, indent=4)
-
-elif "adversarial" in args_data_path:
-
-    pair_comparison_output = []
-
-    for num, ins in enumerate(data):
-
-        print(f"================================instanza {num}====================================")
-
-        # reassign the text to agents, and set final_prompt to null for debate at first round
-        for agent_id in range(len(agentverse.agents)):
-            agentverse.agents[agent_id].source_text = ins["question"]
-
-            if args.reverse_input:
-                agentverse.agents[agent_id].compared_text_one = ins["response"]["output_2"]
-                agentverse.agents[agent_id].compared_text_two = ins["response"]["output_1"]
-            else:
-                agentverse.agents[agent_id].compared_text_one = ins["response"]["output_1"]
-                agentverse.agents[agent_id].compared_text_two = ins["response"]["output_2"]
-
-            agentverse.agents[agent_id].final_prompt = ""
-
-        agentverse.run()
-
-        evaluation = get_evaluation(setting="every_agent", messages=agentverse.agents[0].memory.messages,
-                                    agent_nums=len(agentverse.agents))
-
-        pair_comparison_output.append({"question": ins["question"],
-                                       "response": {"output_1": ins["response"]["output_1"],
-                                                    "output_2": ins["response"]["output_2"]},
-                                       "evaluation": evaluation})
-
-        os.makedirs(args_output_dir, exist_ok=True)
-        with open(os.path.join(args_output_dir, "pair_comparison_results.json"), "w") as f:
-            json.dump(pair_comparison_output, f, indent=4)
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Interrotto manualmente.")
+    except RuntimeError as e:
+        if "Event loop is closed" in str(e):
+            print("Loop già chiuso. Ignorato.")

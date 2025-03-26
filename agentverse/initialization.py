@@ -64,7 +64,7 @@ def load_agent(agent_config: Dict) -> langchainAgent:
 def prepare_task_config(taskwithyaml):
     """Read the yaml config of the given task in `tasks` directory."""
 
-    if not str(taskwithyaml).endswith("config.yaml"): #cambiare il config in base a quello che si vuole utilizzare
+    if not str(taskwithyaml).endswith("config1.yaml"): #cambiare il config in base a quello che si vuole utilizzare
         raise ValueError(
             "You should include config.yaml in your task config path"
         )

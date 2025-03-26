@@ -49,18 +49,17 @@ class AgentVerse:
 
         return cls(agents, environment), input_path, output_path
 
-    def run(self):
+    async def run(self):
         """Run the environment from scratch until it is done."""
         self.environment.reset()
         while not self.environment.is_done():
-            asyncio.run(self.environment.step())
+            await self.environment.step()
 
     def reset(self):
         self.environment.reset()
         for agent in self.agents:
             agent.reset()
 
-    def next(self, *args, **kwargs):
+    async def next(self, *args, **kwargs):
         """Run the environment for one step and return the return message."""
-        return_message = asyncio.run(self.environment.step(*args, **kwargs))
-        return return_message
+        return await asyncio.run(self.environment.step(*args, **kwargs))

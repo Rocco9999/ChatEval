@@ -1,4 +1,8 @@
 .venv/
+# Esclude tutti i file compilati da Python
+*.pyo
+*.pyd
 *.pyc
-__pycache__/
+**/__pycache__/
 agentverse/llms/__pycache__/openai.cpython-310.pyc
+agentverse/__pycache__/__init__.cpython-310.pyc

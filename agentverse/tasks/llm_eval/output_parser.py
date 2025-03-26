@@ -18,7 +18,7 @@ class LLMEvalParser(OutputParser):
         cleaned_output = re.sub(r"\n+", "\n", cleaned_output)
         cleaned_output = cleaned_output.split("\n")
 
-        if cnt_turn >= max_turns - agent_nums:
+        if cnt_turn >= max_turns - 1:
             # if not cleaned_output[0].startswith("Answer") :
             if not (cleaned_output[-1].startswith("The score of Assistant 1:")):
                 raise OutputParserError(text)

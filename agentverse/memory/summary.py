@@ -64,6 +64,11 @@ class SummaryMemory(BaseMemory):
     def update_buffer(self, new_message: str):
         prompt = self._fill_in_prompt_template(new_message)
         final_prompt = ""
+        import logging
+        logging.error("\n========== MEMORY SUMMARY DEBUG ==========")
+        logging.error(f"Prompt:\n{prompt}")
+        logging.error(f"Messages:\n{[str(m) for m in self.messages]}")
+        logging.error("==========================================")
         response = self.llm.generate_response(prompt, self.messages, final_prompt)
         if self.recursive:
             self.buffer = response.content
