@@ -47,7 +47,7 @@ async def main():
 
     if "faireval" in args_data_path:
 
-        for conv in data[47:550]:
+        for conv in data[93:200]:
             conversation_id = conv["conversation_id"]
             pair_comparison_output = []
             conversation_results = []

@@ -1,0 +1,6 @@
+Conversazioni caricate: 234
+Valutazioni medie caricate: 234
+Cohen's Kappa: 0.027
+Spearman's correlation: 0.255, P-value: 0.0001
+Pearson's correlation: 0.255, P-value: 0.0001
+Kendall-Tau correlation: 0.184, P-value: 0.0001

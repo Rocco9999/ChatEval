@@ -72,7 +72,25 @@ tokens = [
     "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",
     "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",
     "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",
-    "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"
+    "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",
+    "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",
+    "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",
+    "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",
+    "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",
+    "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",
+    "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",
+    "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",
+    "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",
+    "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",
+    "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",
+    "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",
+    "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",
+    "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",
+    "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",
+    "",
+    "",
+    "",
+    ""
 ]
 
 import time
@@ -84,6 +102,7 @@ token_history = [deque() for _ in tokens]
 
 MAX_REQUESTS_PER_MINUTE = 30
 MAX_TOKENS_PER_MINUTE = 6000
+bad_tokens_seen = set()
 
 current_token_index = 0  # Indice del token corrente (globale)
 
@@ -202,7 +221,19 @@ class OpenAICompletion(BaseCompletionModel):
         except openai.RateLimitError as e:
             if e.response.status_code == 429:
                 logger.error(f"Rate limit exceeded. Switching token...")
-                set_next_token()  # Cambia token
+                set_next_token()
+
+        except openai.OpenAIError as e:
+            error_message = str(e)
+            if "organization_restricted" in error_message:
+                bad_token = tokens[current_token_index]
+                double_check = openai.api_key
+                if bad_token not in bad_tokens_seen:
+                    with open("bad_tokens.txt", "a") as f:
+                        f.write(f"{bad_token} and {double_check}\n")
+                    bad_tokens_seen.add(bad_token)
+                print(f"[!] Token bloccato per restrizione organizzativa: {bad_token}")
+                set_next_token()
             raise  # Rilancia l'eccezione per farla gestire dallo script principale
 
     async def agenerate_response(self, prompt: str, chat_memory: List[Message], final_prompt: str) -> LLMResult:
@@ -218,6 +249,18 @@ class OpenAICompletion(BaseCompletionModel):
         except openai.RateLimitError as e:
             if e.response.status_code == 429:
                 logger.error(f"Rate limit exceeded. Switching token...")
+                set_next_token()
+
+        except openai.OpenAIError as e:
+            error_message = str(e)
+            if "organization_restricted" in error_message:
+                bad_token = tokens[current_token_index]
+                double_check = openai.api_key
+                if bad_token not in bad_tokens_seen:
+                    with open("bad_tokens.txt", "a") as f:
+                        f.write(f"{bad_token} and {double_check}\n")
+                    bad_tokens_seen.add(bad_token)
+                print(f"[!] Token bloccato per restrizione organizzativa: {bad_token}")
                 set_next_token()
             raise
 
@@ -263,6 +306,18 @@ class OpenAIChat(BaseChatModel):
             if e.response.status_code == 429:
                 logger.error(f"Rate limit exceeded. Switching token...")
                 set_next_token()
+
+        except openai.OpenAIError as e:
+            error_message = str(e)
+            if "organization_restricted" in error_message:
+                bad_token = tokens[current_token_index]
+                double_check = openai.api_key
+                if bad_token not in bad_tokens_seen:
+                    with open("bad_tokens.txt", "a") as f:
+                        f.write(f"{bad_token} and {double_check}\n")
+                    bad_tokens_seen.add(bad_token)
+                print(f"[!] Token bloccato per restrizione organizzativa: {bad_token}")
+                set_next_token()
             raise
 
     async def agenerate_response(self, prompt: str, chat_memory: List[Message], final_prompt: str) -> LLMResult:
@@ -281,6 +336,18 @@ class OpenAIChat(BaseChatModel):
             if e.response.status_code == 429:
                 logger.error(f"Rate limit exceeded. Switching token...")
                 set_next_token()
+
+        except openai.OpenAIError as e:
+            error_message = str(e)
+            if "organization_restricted" in error_message:
+                bad_token = tokens[current_token_index]
+                double_check = openai.api_key
+                if bad_token not in bad_tokens_seen:
+                    with open("bad_tokens.txt", "a") as f:
+                        f.write(f"{bad_token} and {double_check}\n")
+                    bad_tokens_seen.add(bad_token)
+                print(f"[!] Token bloccato per restrizione organizzativa: {bad_token}")
+                set_next_token()
             raise
 
 def get_embedding(text: str, attempts=3) -> np.array:
@@ -293,7 +360,19 @@ def get_embedding(text: str, attempts=3) -> np.array:
         except openai.RateLimitError as e:
             if e.response.status_code == 429:
                 logger.error(f"Rate limit exceeded. Switching token...")
-                set_next_token()  # Cambia token
+                set_next_token()
+
+        except openai.OpenAIError as e:
+            error_message = str(e)
+            if "organization_restricted" in error_message:
+                bad_token = tokens[current_token_index]
+                double_check = openai.api_key
+                if bad_token not in bad_tokens_seen:
+                    with open("bad_tokens.txt", "a") as f:
+                        f.write(f"{bad_token} and {double_check}\n")
+                    bad_tokens_seen.add(bad_token)
+                print(f"[!] Token bloccato per restrizione organizzativa: {bad_token}")
+                set_next_token()
             else:
                 logger.error(f"HTTP Error: {e}", exc_info=True)
                 raise
